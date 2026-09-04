@@ -40,6 +40,7 @@ public static class Project
 					goto DONE;
 				}
 				CompiledProgram prog;
+				
 				try
 				{
 					Console.WriteLine();

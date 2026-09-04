@@ -6,7 +6,7 @@ namespace ToyCompiler.Data;
 /// </summary>
 public enum InsID
 {
-	stop,//stop
+	stop,//stop the program
 
 	addi, subi, muli, divi, modi,   //addi R1 R2 R3  R1=R2+R3
 	gtri, smri, egtri, esmri,       //gtri R1 R2 R3  R1=R2>R3

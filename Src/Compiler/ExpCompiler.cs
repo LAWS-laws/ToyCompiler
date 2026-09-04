@@ -31,7 +31,10 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 	{
 		public RegVar? Var = var;
 		public VarType Type = typ;
-		public bool IsStatic = isstatic;
+		/// <summary>
+		/// 是否为公共变量
+		/// </summary>
+		public bool IsPublic = isstatic;
 	}
 
 	/*用于编译函数内的表达式*/
@@ -72,7 +75,8 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		}
 		else if (Tokens[0].Str == "else")//else  elif
 		{
-			if (Bmark.Count != Depth + 1 || Bmark.Peek().Mode != BranchType.If) throw new Exception("else语句应位于if语句后");
+			if (Bmark.Count != Depth + 1 || Bmark.Peek().Mode != BranchType.If) 
+				throw new Exception("else语句应位于if语句后");
 			if (Tokens.Count == 1) return;//单else不做编译
 
 			if (Tokens[1].Str != "if") throw new Exception("语法错误");
@@ -283,7 +287,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 			if (tok[loc + 3].Str != "]") throw new Exception("应输入]");
 			if (typ.Var.Type.Pdepth <= 0) throw new Exception("无法将[]用于" + typ.Type + "类型的表达式");
 			RegVar arr = typ.Var;//数组变量
-			if (typ.IsStatic) arr = LoadPvar(arr);
+			if (typ.IsPublic) arr = LoadPvar(arr);
 
 			int index = 0;
 			Ret_TokenType typp = TypeofToken(tok[loc + 2].Str);//如索引为常量可进行优化
@@ -325,7 +329,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 			if (typ.Var == null) throw new Exception("左值应是变量");
 			if (tok[loc + 3].Str != "]") throw new Exception("应输入]");
 			if (typ.Var.Type.Pdepth <= 0) throw new Exception("无法将[]用于" + typ.Type + "类型的表达式");
-			if (typ.IsStatic) typ.Var = LoadPvar(typ.Var);
+			if (typ.IsPublic) typ.Var = LoadPvar(typ.Var);
 
 			int index = 0;
 			Ret_TokenType typp = TypeofToken(tok[loc + 2].Str);
@@ -371,7 +375,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 			if (tok[loc + 2].Str != ")") throw new Exception("语法错误");
 			Ret_TokenType tt = TypeofToken(tok[loc + 3].Str);
 			if (tt.Var == null) throw new Exception("无法对常量进行类型转换");
-			if (tt.IsStatic) tt.Var = LoadPvar(tt.Var);
+			if (tt.IsPublic) tt.Var = LoadPvar(tt.Var);
 
 			var id = SwitchIns_Convert(target_id, tt.Type);
 
@@ -436,7 +440,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 
 			Ret_TokenType typ = TypeofToken(tok[end].Str);
 			typ.Var ??= LoadConst(tok, typ.Type, end);//如常量则装载
-			if (typ.IsStatic) typ.Var = LoadPvar(typ.Var);
+			if (typ.IsPublic) typ.Var = LoadPvar(typ.Var);
 			vars.Add(typ.Var);
 			end += 2;
 		}
@@ -473,7 +477,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 	{/*loc位于 . 号上*/
 		Ret_TokenType typ1 = TypeofToken(tok[loc - 1].Str);
 		if (typ1.Var == null || typ1.Var.Type.Pdepth != 0) throw new Exception("语法错误");
-		if (typ1.IsStatic) typ1.Var = LoadPvar(typ1.Var);
+		if (typ1.IsPublic) typ1.Var = LoadPvar(typ1.Var);
 
 		UserTypeDef ut = PublicTokens.GetUserType(typ1.Var.Type.ID);
 		RegVar member = ut.GetMember(tok[loc + 1].Str);
@@ -532,7 +536,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		if (re1.Var == null) throw new Exception("不可为常量赋值");
 		if (re2.Var == null)//优化：直接装载常量到目标
 		{
-			if (re1.IsStatic)//使用全局区写入指令
+			if (re1.IsPublic)//使用全局区写入指令
 			{/*把常量装载到寄存器，然后拷贝到全局区*/
 				RegVar vv = LoadConst(tok, re1.Type, loc + 1);
 
@@ -559,10 +563,17 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		{
 			if (!PublicTokens.ConvertTo(re2.Type, re1.Type))
 				throw new Exception("无法把类型" + re2.Type + "隐式转换为" + re1.Type);
-			if (re2.Var.State == RegStat.Occupied) re2.Var.State = RegStat.Available;
+			if (re2.Var.State == RegStat.Occupied) re2.Var.State = RegStat.Available;//re2 总是空闲
 
-			Ilist.Add(new Ins(re1.IsStatic ? InsID.setpz : InsID.set, re1.Var.Offest, re2.Var.Offest, 0));
-			Log.Print(re1.IsStatic ? InsID.setpz : InsID.set, tok[loc - 1].Str, tok[loc + 1].Str);
+			if(re2.IsPublic)//利用re2拷贝公共区，再赋值到re1
+			{
+				Ilist.Add(new Ins(InsID.getpz, re2.Var.Offest, re2.Var.Offest, 0));
+				Log.Print(InsID.getpz, tok[loc + 1].Str, tok[loc + 1].Str);
+			}
+
+
+			Ilist.Add(new Ins(re1.IsPublic ? InsID.setpz : InsID.set, re1.Var.Offest, re2.Var.Offest, 0));
+			Log.Print(re1.IsPublic ? InsID.setpz : InsID.set, tok[loc - 1].Str, tok[loc + 1].Str);
 		}
 		tok.RemoveRange(loc - 1, 3);
 		pri.RemoveRange(loc - 1, 3);
@@ -575,8 +586,8 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		Ret_TokenType typ1 = TypeofToken(tok[loc - 1].Str);//左侧符号的字符串
 		Ret_TokenType typ2 = TypeofToken(tok[loc + 1].Str);//右侧符号的字符串
 		if (!typ1.Type.Equ(typ2.Type) &&
-			!PublicTokens.ConvertTo(typ1.Type, new(TypeID.Int)) ||
-			!PublicTokens.ConvertTo(typ2.Type, new(TypeID.Int)))
+			(!PublicTokens.ConvertTo(typ1.Type, new(TypeID.Int)) ||
+			!PublicTokens.ConvertTo(typ2.Type, new(TypeID.Int))))
 			throw new Exception("运算符" + op + "无法用于" + typ1.Type + "与" + typ2.Type);
 
 		if (typ1.Var == null && typ2.Var == null)
@@ -588,8 +599,8 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		}//全常量时优化表达式
 		typ1.Var ??= LoadConst(tok, typ1.Type, loc - 1);//将左侧常量装载
 		typ2.Var ??= LoadConst(tok, typ2.Type, loc + 1);//将右侧常量装载
-		if (typ1.IsStatic) typ1.Var = LoadPvar(typ1.Var);
-		if (typ2.IsStatic) typ2.Var = LoadPvar(typ2.Var);
+		if (typ1.IsPublic) typ1.Var = LoadPvar(typ1.Var);
+		if (typ2.IsPublic) typ2.Var = LoadPvar(typ2.Var);
 		/*现在为全变量*/
 
 		if (typ1.Var.State == RegStat.Occupied) typ1.Var.State = RegStat.Available;
@@ -637,7 +648,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 		if (typ1.Var != null)
 		{
 			if (!typ1.Type.Equ(type)) throw new Exception("参数不是" + type + "类型");
-			if (typ1.IsStatic) typ1.Var = LoadPvar(typ1.Var);
+			if (typ1.IsPublic) typ1.Var = LoadPvar(typ1.Var);
 			return typ1.Var;//为变量则直接返回
 		}
 
@@ -722,7 +733,7 @@ public class ExpCompiler(List<RegVar> vtype, VarType ret)
 	/// </summary>
 	private Ret_TokenType TypeofToken(string nam)
 	{
-		if (char.IsDigit(nam[0]))
+		if (char.IsDigit(nam[0]) || nam[0] == '-')
 		{
 			if (nam.Contains('.')) return new Ret_TokenType(null, new VarType(TypeID.Float), false);
 			return new Ret_TokenType(null, new VarType(TypeID.Int), false);

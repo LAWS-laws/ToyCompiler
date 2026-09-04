@@ -15,6 +15,7 @@ public class CompilingProcess
 	{
 		Code = [];
 		Funcs = [];
+		PublicTokens.Clear();
 		PublicTokens.Add_UserFunc(Funcs);
 	}
 	/// <summary>
@@ -40,6 +41,7 @@ public class CompilingProcess
 		List<Line> publicvars = [];
 		List<(int, int)> fregion = [];//缓存函数范围
 		List<UserTypeDef> usertypes = [];
+
 		for (int i = 0; i < Code.Count; i++)
 		{
 			if (Code[i].Tok[0].Str == "{") depth++;

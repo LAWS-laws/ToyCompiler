@@ -18,13 +18,27 @@ public static class PublicTokens
 		("int",TypeID.Int),("float", TypeID.Float),("byte", TypeID.Byte),
 		("bool", TypeID.Bool),("char",TypeID.Char),
 	];// 所有类型的ID。可扩充
-	private static List<Function> Funcs = [];
-	private static List<IFunc> LibFuncs = [];
+	private static List<Function> Funcs = [];//用户函数
+	private static List<IFunc> LibFuncs = [];//库函数
 	private static List<RegVar> Publicvars = [];
 	private static List<(string, int)> C_string = [];
 	private static List<UserTypeDef> UserTypes = [];
 	private static int Strlen = 0;//字符串常量段的长度(int32)
 	private static TypeID id = TypeID.Bool + 1;
+
+	/// <summary>
+	/// 清除上一次编译后残留的数据
+	/// </summary>
+	public static void Clear()
+	{
+		Funcs.Clear();
+		//LibFuncs.Clear();
+		Publicvars.Clear();
+		C_string.Clear();
+		UserTypes.Clear();
+		Strlen = 0;
+		id = TypeID.Bool + 1;
+	}
 
 	/// <summary>
 	/// 添加一个用户类型
@@ -33,7 +47,7 @@ public static class PublicTokens
 	{
 		for (int i = 0; i < UserTypes.Count; i++)
 		{
-			if (UserTypes[i].Name == typ.Name) throw new Exception("类型重名");
+			if (UserTypes[i].Name == typ.Name) throw new Exception("类型重名："+ typ.Name);
 		}
 		typ.Type.ID = id;//记录唯一的类型ID
 		id++;
@@ -54,7 +68,7 @@ public static class PublicTokens
 	{
 		for (int i = 0; i < Publicvars.Count; i++)
 		{
-			if (Publicvars[i].Name == vars.Name) throw new Exception("公共变量重名");
+			if (Publicvars[i].Name == vars.Name) throw new Exception("公共变量重名: "+ vars.Name);
 		}
 		Publicvars.Add(vars);
 	}
@@ -134,7 +148,15 @@ public static class PublicTokens
 				if (IsTargetFunc(LibFuncs[i], in name, typ, conv)) return LibFuncs[i];
 			}
 		}
-		throw new Exception("没有找到对应函数的重载");
+
+		string st = "没有找到对应函数的重载：" + name +'(';
+		for (int i = 0; i < typ.Count; i++)
+		{
+			st += typ[i].Type.ToString() + ' ' + typ[i].Name + ',';
+		}
+		st += ')';
+		//PublicTokens.Clear();
+		throw new Exception(st);
 	}
 	/// <summary>
 	/// 是否为类型标识符。如不是类型会返回Type.None
@@ -194,7 +216,7 @@ public static class PublicTokens
 		if (src.Pdepth != 0 || dst.Pdepth != 0) return false;
 		if (dst.ID == TypeID.Int)
 		{
-			if (src.ID == TypeID.Byte || src.ID == TypeID.Char) return true;
+			if (src.ID == TypeID.Byte || src.ID == TypeID.Char || src.ID == TypeID.Bool) return true;
 		}
 		else if (dst.ID == TypeID.Char)
 		{

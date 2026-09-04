@@ -59,12 +59,15 @@ public class Function : IFunc
 		Excomp.AddPreProcess(Para);
 		for (int j = Start; j <= End; j++)
 		{
-			//try
-			//{
-			string next = j == Code.Count - 1 ? string.Empty : Code[j + 1].Tok[0].Str;
-			Excomp.Compile(Code[j].Tok, Code[j].Pri, next);
-			//}
-			//catch (Exception e) { throw new Exception("Line " + Code[j].Number + " " + e.Message); }
+			try
+			{
+				string next = j == Code.Count - 1 ? string.Empty : Code[j + 1].Tok[0].Str;
+				Excomp.Compile(Code[j].Tok, Code[j].Pri, next);
+			}
+			catch (Exception e) 
+			{ 
+				throw new Exception("Line :" + Code[j].Number + " " + e.Message);
+			}
 		}
 		if (Excomp.Ilist[^1].ID != InsID.ret && Excomp.Ilist[^1].ID != InsID.ret0)
 		{

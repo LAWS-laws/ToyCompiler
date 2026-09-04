@@ -9,7 +9,13 @@ namespace ToyCompiler.Data;
 /// </summary>
 public struct VarType
 {
+	/// <summary>
+	/// 类型的唯一ID
+	/// </summary>
 	public TypeID ID;
+	/// <summary>
+	/// 类型的指针嵌套程度。常量为0
+	/// </summary>
 	public int Pdepth;
 	public VarType(TypeID id)
 	{
