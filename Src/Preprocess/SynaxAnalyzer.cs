@@ -1,22 +1,24 @@
-﻿using System.Text;
+﻿
+using ToyCompiler.Data;
+using ToyCompiler.Compiler;
 
-namespace CompilerToy;
-
-/// <summary>
-/// for语句的解析结果
-/// </summary>
-public struct Ret_DecodeFOR(Line l1, Line l2, Line l3)
-{
-	public Line Line1 = l1;
-	public Line Line2 = l2;
-	public Line Line3 = l3;
-}
+namespace ToyCompiler.Preprocess;
 
 /// <summary>
 /// 输入源码。转换为Token[]和优先级列表
 /// </summary>
 public class SynaxAnalyzer
 {
+	/// <summary>
+	/// for语句的解析结果
+	/// </summary>
+	private struct Ret_DecodeFOR(Line l1, Line l2, Line l3)
+	{
+		public Line Line1 = l1;
+		public Line Line2 = l2;
+		public Line Line3 = l3;
+	}
+
 	//此类下并无成员数据。它是一系列语法分析函数的集合。
 
 	//运算符集合
@@ -31,13 +33,11 @@ public class SynaxAnalyzer
 		("|",4),("!",11),("(",12),(")",12),("[",12),("]",12),("{",0), ("}",0), (",",0),
 		(";",0),(".",12),
 	];
-	/*
-	 重复next，遇到{};就分一整行
-	*/
+	/* 重复next，遇到{};就分一整行 */
 	/// <summary>
 	/// 把源码拆分为标准行，每行有小括号检查
 	/// </summary>
-	public static List<Line>Split2(string sourcecode)
+	public static List<Line> Split2(string sourcecode)
 	{
 		char[] str = (sourcecode + '\0').ToCharArray();
 		List<Line> ret = [new Line(0, [])];
@@ -57,9 +57,9 @@ public class SynaxAnalyzer
 				continue;
 			}//跳过空格并计算行数
 
-			if(c == ';' && (brackets.Count==0 || brackets.Peek() !=2) || c == '{' || c == '}')
+			if (c == ';' && (brackets.Count == 0 || brackets.Peek() != 2) || c == '{' || c == '}')
 			{
-				if (c!= ';')//括号独立成行
+				if (c != ';')//括号独立成行
 					ret.Add(new Line(line, [new Token(TokenType.Symbol, c.ToString())]));
 				ret.Add(new Line());
 				now++;
@@ -106,7 +106,7 @@ public class SynaxAnalyzer
 				ret[^1].Pri.Add(priority);
 				ret[^1].Tok.Add(tok);   //添加当前符号
 			}
-			now += tok.Str.Length;	//改下一个符号的头
+			now += tok.Str.Length;  //改下一个符号的头
 		}
 		for (int i = 0; i < ret.Count; i++)
 		{
@@ -122,13 +122,13 @@ public class SynaxAnalyzer
 	private static void DecodeSynaxCandy(List<Line> code)
 	{
 		Stack<bool> brackets = new();
-		Stack<Line> lines = new();	//存for循环自增语句
-		for(int i=0;i<code.Count;i++)
+		Stack<Line> lines = new();  //存for循环自增语句
+		for (int i = 0; i < code.Count; i++)
 		{
 			for (int j = 0; j < code[i].Tok.Count; j++)
 			{/*char转换*/
 				if (!code[i].Tok[j].Str.StartsWith('\'')) continue;
-				if(code[i].Tok[j].Str.Length != 3) throw new Exception("不支持的char格式");
+				if (code[i].Tok[j].Str.Length != 3) throw new Exception("不支持的char格式");
 
 				code[i].Tok[j] = new Token(TokenType.Digit, ((int)code[i].Tok[j].Str[1]).ToString());
 			}
@@ -163,7 +163,7 @@ public class SynaxAnalyzer
 	{
 		int d1 = -1;
 		int d2 = -1;
-		if (line.Tok.Count==1|| line.Tok[1].Str != "(" || line.Tok[^1].Str != ")") throw new Exception("没写小括号");
+		if (line.Tok.Count == 1 || line.Tok[1].Str != "(" || line.Tok[^1].Str != ")") throw new Exception("没写小括号");
 		for (int i = 0; i < line.Tok.Count; i++)
 		{
 			if (line.Tok[i].Str != ";") continue;
@@ -173,7 +173,7 @@ public class SynaxAnalyzer
 		}//找到分隔的分号
 		if (d1 == -1 || d2 == -1) throw new Exception("语法错误：少写了分号");
 
-		Line line2 = new Line(line.Number, line.Tok[(d1 + 1)..d2], line.Pri[(d1 + 1)..d2]);
+		Line line2 = new(line.Number, line.Tok[(d1 + 1)..d2], line.Pri[(d1 + 1)..d2]);
 
 		line2.Tok.Insert(0, new Token(TokenType.Symbol, "("));
 		line2.Tok.Insert(0, new Token(TokenType.Letter, "while"));
@@ -183,14 +183,14 @@ public class SynaxAnalyzer
 		line2.Pri.Insert(0, 0);
 		line2.Pri.Add(OpPriority(line2.Tok[1]));
 
-		if(line2.Tok.Count == 3)//while()
+		if (line2.Tok.Count == 3)//while()
 		{
 			line2.Tok.Insert(2, new Token(TokenType.Letter, "true"));
 			line2.Pri.Insert(2, 0);
 		}
 
 		return new Ret_DecodeFOR(new Line(line.Number, line.Tok[2..d1], line.Pri[2..d1]), line2,
-								 new Line(line.Number, line.Tok[(d2+1)..^1], line.Pri[(d2+1)..^1]));
+								 new Line(line.Number, line.Tok[(d2 + 1)..^1], line.Pri[(d2 + 1)..^1]));
 	}
 	//辅助函数
 	/// <summary>
@@ -205,11 +205,11 @@ public class SynaxAnalyzer
 	/// <summary>
 	/// 从now开始截取出一个符号
 	/// </summary>
-	private static Token Next(char[]str,int now)
+	private static Token Next(char[] str, int now)
 	{
 		int i = 1;//用于保存符号长度
 		TokenType typ;
-		if (str[now] == '/' && str[now+1] == '/')
+		if (str[now] == '/' && str[now + 1] == '/')
 		{
 			while (str[now + i] != '\n' && str[now + i] != '\0') i++;
 			typ = TokenType.Notes;
@@ -217,8 +217,8 @@ public class SynaxAnalyzer
 		else if (str[now] == '/' && str[now + 1] == '*')
 		{
 			i++;
-			while (str[now + i] != '*' || str[now + i+1] != '/') i++;
-			i+=2;
+			while (str[now + i] != '*' || str[now + i + 1] != '/') i++;
+			i += 2;
 			typ = TokenType.Notes;
 		}/*多行注释*/
 		else if (IsLetter(str[now]))
@@ -278,7 +278,7 @@ public class SynaxAnalyzer
 	/// </summary>
 	private static int OpPriority(Token tok)
 	{
-		if(tok.Type != TokenType.Symbol) return -1;
+		if (tok.Type != TokenType.Symbol) return -1;
 		return OpMes(tok.Str[0], tok.Str.Length == 1 ? 'a' : tok.Str[1]).Item2;
 	}
 	/// <summary>
@@ -287,36 +287,5 @@ public class SynaxAnalyzer
 	private static bool IsLetter(char c)
 	{
 		return char.IsLetter(c) || c > 255;
-	}
-}
-
-/// <summary>
-/// 输出信息
-/// </summary>
-public class Log
-{
-	private static readonly StringBuilder sb = new();
-	private static int Line = 0;
-	public static void Print(string st)
-	{
-		sb.Append(st);
-		sb.Append("\r\n");
-	}
-	public static void Print(InsID id, string str1, string str2)
-	{
-		sb.Append("\t" + Line + "\t" + id.ToString() + '\t' + str1 + '\t' + str2);
-		sb.Append("\r\n");
-		Line++;
-	}
-	public static void Print(InsID id, string str1, string str2, string str3)
-	{
-		sb.Append("\t"+Line + "\t" + id.ToString() + '\t' + str1 + '\t' + str2 + '\t' + str3);
-		sb.Append("\r\n");
-		Line++;
-	}
-	public static void Out()
-	{
-		Console.WriteLine(sb.ToString());
-		sb.Clear();
 	}
 }

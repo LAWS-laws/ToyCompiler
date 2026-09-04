@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerToy", "CompilerToy.csproj", "{AB133D0B-0F3B-473A-BF94-98A61D775226}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToyCompiler", "ToyCompiler.csproj", "{AB133D0B-0F3B-473A-BF94-98A61D775226}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +24,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F3020496-64BE-4962-8013-17F871459BBB}
 	EndGlobalSection
 EndGlobal

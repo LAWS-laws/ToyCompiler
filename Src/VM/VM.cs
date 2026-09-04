@@ -1,45 +1,19 @@
-﻿
+﻿using ToyCompiler.Data;
 using System.Runtime.InteropServices;
 
-namespace CompilerToy;
+namespace ToyCompiler.VM;
 
-/// <summary>
-/// 用于执行的程序
-/// </summary>
-public struct Program(int stklen,int clen, Ins[] ilist,int varcount, int[]constdata)
+public class VirtualMachine(CompiledProgram prog)
 {
-	public int PvarCount = varcount;
-	public int StackLen = stklen;   //栈深度
-	public int CallStackLen = clen; //调用栈深度
-	public Ins[] InsList = ilist;   //指令表
-	public int[] ConstDat = constdata;
-}
-/// <summary>
-///	寄存器组
-/// </summary>
-public unsafe struct Regs
-{
-	public int R00; public int R01; public int R02; public int R03; public int R04; 
-	public int R05; public int R06; public int R07; public int R08; public int R09; 
-	public int R10; public int R11; public int R12; public int R13; public int R14; 
-	public int R15; public int R16; public int R17; public int R18; public int R19; 
-	public int R20; public int R21;
-}
+	private readonly CompiledProgram Prog = prog;
 
-public class VirtualMachine
-{
-	private readonly Program Prog;
-	public VirtualMachine(Program prog)
-	{
-		Prog = prog;
-	}
 	public unsafe void Run()
 	{
 		/*R0-R19 参数 R20 返回值地址 R21 存栈 22个*/
 		Ins[] ilist = Prog.InsList;
 		int[] stack = new int[Prog.StackLen];
 		Regs[] Rgroups = new Regs[Prog.CallStackLen];
-		Regs Rgroup = new Regs();
+		Regs Rgroup = new();
 		int* publiczone = (int*)Marshal.AllocHGlobal((Prog.PvarCount + Prog.ConstDat.Length) * 4);
 		int calldepth = 0;			//调用深度
 		int* reg = (int*)&Rgroup;		//当前函数的寄存器组
@@ -169,7 +143,7 @@ public class VirtualMachine
 								case LibFuncID.PrintC:
 									Console.WriteLine((char)stack[sp--]); break;
 								case LibFuncID.PrintStr:
-									string st = new string((char*)stack[sp--]);
+									string st = new((char*)stack[sp--]);
 									Console.WriteLine(st); break;
 								case LibFuncID.InputI:
 									stack[++sp] = Convert.ToInt32(Console.ReadLine()); break;

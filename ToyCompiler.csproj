@@ -10,9 +10,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Doc\Obsolete.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Doc\Source.java">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Doc\Obsolete.cs" />
   </ItemGroup>
 
 </Project>

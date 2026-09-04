@@ -427,3 +427,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+/Doc/Obsolete.cs
+/Doc/Design.txt
+/Doc/Source.asm
+/Doc/Source.java
+/Doc/Design.txt
+/Doc/Source.asm
+/Doc/Source.java
