@@ -11,6 +11,7 @@ public static class Proj
 		string code;
 		try
 		{
+			
 			code = File.ReadAllText("Source.java",Encoding.Default);
 		}
 		catch (Exception ex)
