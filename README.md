@@ -46,7 +46,7 @@ void Main() /*EntryPoint*/
 }
 ```
 
-更多示例可以在 [`Doc/SourceDemo.txt`](Doc/Source.java) 中找到。
+更多示例可以在 [`Doc/SourceDemo.txt`](Doc/SourceDemo.txt) 中找到。
 
 ## 虚拟机与字节码
 
